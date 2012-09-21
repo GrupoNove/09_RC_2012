@@ -1,8 +1,11 @@
 smb: smb.c
-	gcc &^ -o SMB
+	gcc smb.c -o SMB
 
 stat: stat.c
-	gcc &^ -o STAT
+	gcc stat.c -o STAT
 
 user: user.c
-	gcc &^ -o user
+	gcc user.c -o user
+
+clean:
+	rm SMB STAT user
