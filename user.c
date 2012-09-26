@@ -8,38 +8,62 @@
 #include <string.h>
 #include <stdio.h>
 
+#define PORT 58000
+#define NG 9
+
 int main(int argc, char **argv){
 	int fd, n, nbytes, nwritten, nread;
 	struct sockaddr_in addr;
 	struct hostent *hostptr;
 	char *ptr, buffer[128];
 	
-	
 	char *username = argv[1];
 	char *SMBname;
 	int SMBport;
-	int NG = 0;
 	
-	if (argc == 4) {
+	if (argc == 1) {
+		printf("\nUsername missing...\nCorrect sintaxe: user username [-n SMBname] [-p SMBport]\n");
+		return 0;
+
+	} else if (argc == 4) {
 	
-		if (!strcmp(argv[2], "-n")) {
-			SMBname = argv[3];
-			SMBport = 5800 + NG;
-		}
-		else if (!strcmp(argv[2], "-p")) {
+		if (!strcmp(argv[2], "-p")) {
 			SMBport = atoi(argv[3]);
 			SMBname = "localhost";
 		}
+		else if (!strcmp(argv[2], "-n")) {
+			SMBname = argv[3];
+			SMBport = PORT + NG;
+		} else {
+			printf("\nArgument not known: %s\n", argv[2]);
+			return 0;
+		}
 	
 	} else if(argc == 6) {
-
-		SMBname = argv[3];
-		SMBport = atoi(argv[5]);
+		
+		if (!strcmp(argv[2], "-n") && !strcmp(argv[4], "-p")) {
+			SMBname = argv[3];
+			SMBport = atoi(argv[5]);
+		}
+		else if (!strcmp(argv[2], "-p") && !strcmp(argv[4], "-n")) {
+			SMBport = atoi(argv[3]);
+			SMBname = argv[5];
+		} else {
+			printf("\nArgument not known: %s %s\n", argv[2], argv[4]);
+			return 0;
+		}
 	
 	} else if (argc == 2) {
 		SMBname = "localhost";
-		SMBport = 58000+NG;
+		SMBport = PORT + NG;
 	}
+
+	else {
+		printf("\nCorrect sintaxe: user username [-n SMBname] [-p SMBport]\n");
+		return 0;
+	}
+
+	printf("name: %s \t port: %d\n", SMBname, SMBport);
 	
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(fd == -1)
@@ -70,3 +94,6 @@ int main(int argc, char **argv){
 	close(fd);
 	exit(0);
 }
+
+
+/* vim: tabstop=4:softtabstop=4:shiftwidth=4:noexpandtab */

@@ -1,4 +1,5 @@
 //smb.c
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -7,7 +8,116 @@
 #include <netdb.h>
 #include <string.h>
 
-int main(void) {
+#define SMBPORT 58000
+#define STATPORT 59000
+#define NG 9
+
+void getArgs(int argc, char **argv, int *SMBport, char *STATname, int *STATport) {
+	
+	if (argc == 1) {
+		*SMBport = SMBPORT + NG;
+		STATname = "localhost";
+		*STATport = STATPORT;
+
+	} else if (argc == 3) {
+	
+		if (!strcmp(argv[1], "-p")) {
+			*SMBport = atoi(argv[2]);
+			STATname = "localhost";
+			*STATport = STATPORT;
+		}
+		else if (!strcmp(argv[1], "-n")) {
+			STATname = argv[2];
+			*SMBport = SMBPORT + NG;
+			*STATport = STATPORT;
+		}
+		else if (!strcmp(argv[1], "-t")) {
+			*STATport = atoi(argv[2]);
+			*SMBport = SMBPORT + NG;
+			STATname = "localhost";
+		} else {
+			printf("\nArgument not known: %s\n", argv[1]);
+			exit(1);
+		}
+	
+	} else if(argc == 5) {
+		
+		if (!strcmp(argv[1], "-n") && !strcmp(argv[3], "-p")) {
+			STATname = argv[2];
+			*SMBport = atoi(argv[4]);
+			*STATport = STATPORT;
+		}
+		else if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-n")) {
+			*SMBport = atoi(argv[2]);
+			STATname = argv[4];
+			*STATport = STATPORT;
+		}
+		else if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-t")) {
+			*SMBport = atoi(argv[2]);
+			*STATport = atoi(argv[4]);
+			STATname = "localhost";
+		}
+		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-p")) {
+			*STATport = atoi(argv[2]);
+			*SMBport = atoi(argv[4]);
+			STATname = "localhost";
+		}
+		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-n")) {
+			*STATport = atoi(argv[2]);
+			STATname = argv[4];
+			*SMBport = SMBPORT + NG;
+		}
+		else if (!strcmp(argv[1], "-n") && !strcmp(argv[3], "-t")) {
+			STATname = argv[2];
+			*STATport = atoi(argv[4]);
+			*SMBport = SMBPORT + NG;
+		} else {
+			printf("\nArgument not known: %s %s\n", argv[2], argv[4]);
+			exit(1);
+		}
+	
+	} else if (argc == 7) {
+		
+		if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-n") && !strcmp(argv[5], "-t")) {
+			*SMBport = atoi(argv[2]);
+			STATname = argv[4];
+			*STATport = atoi(argv[6]);
+		}
+		else if (!strcmp(argv[1], "-n") && !strcmp(argv[3], "-p") && !strcmp(argv[5], "-t")) {
+			STATname = argv[2];
+			*SMBport = atoi(argv[4]);
+			*STATport = atoi(argv[6]);
+		}
+		else if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-t") && !strcmp(argv[5], "-n")) {
+			*SMBport = atoi(argv[2]);
+			*STATport = atoi(argv[4]);
+			STATname = argv[6];
+		}
+		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-p") && !strcmp(argv[5], "-n")) {
+			*STATport = atoi(argv[2]);
+			*SMBport = atoi(argv[4]);
+			STATname = argv[6];
+		}
+		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-n") && !strcmp(argv[5], "-p")) {
+			*STATport = atoi(argv[6]);
+			STATname = argv[2];
+			*SMBport = atoi(argv[4]);
+		} else {
+			printf("\nArgument not known: %s %s\n", argv[2], argv[4]);
+			exit(1);
+		}
+
+	}
+
+	else {
+		printf("\nCorrect sintaxe: SMB [-p SMBport] [-n STATname] [-t STATport]\n");
+		exit(1);
+	}
+
+}
+
+
+int main(int argc, char **argv) {
 	int fd, addrlen, ret, newfd;
 	int fdStat, nStat, nreadStat;
 	int addrStatlen;
@@ -16,6 +126,10 @@ int main(void) {
 	struct sockaddr_in addr;
 	char *ptr, buffer[128];
 	struct hostent *hostptr;
+	int SMBport, STATport;
+	char *STATname;
+
+	getArgs(argc, argv, &SMBport, STATname, &STATport);
 	
 	fdStat = socket(AF_INET, SOCK_DGRAM, 0);
 	
@@ -29,7 +143,7 @@ int main(void) {
 	memset((void*)&addrStat, (int)'\0', sizeof(addrStat));
 	addrStat.sin_family = AF_INET;
 	addrStat.sin_addr.s_addr = ((struct in_addr*)(hostptr->h_addr_list[0]))->s_addr;
-	addrStat.sin_port = htons(58000);
+	addrStat.sin_port = htons(STATport);
 	
 	addrStatlen = sizeof(addrStat);
 	nStat = sendto(fdStat, "Hello!", 6, 0, (struct sockaddr*)&addrStat, addrStatlen);
@@ -56,7 +170,7 @@ int main(void) {
 	memset((void*)&addr, (int)'\0', sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	addr.sin_port = htons(58000);
+	addr.sin_port = htons(SMBport);
 	
 	ret = bind(fd, (struct sockaddr*)&addr, sizeof(addr));
 	if(ret == -1)
