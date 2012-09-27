@@ -7,5 +7,7 @@ stat: stat.c
 user: user.c
 	gcc user.c -o user
 
+all: smb stat user
+
 clean:
 	rm SMB STAT user

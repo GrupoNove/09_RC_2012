@@ -129,7 +129,8 @@ int main(int argc, char **argv) {
 	struct hostent *hostptr;
 	int SMBport, STATport;
 	char *STATname;
-	char reg[BUFFER_SIZE];
+	char *userTokens;
+	char reg[BUFFER_SIZE], udp[BUFFER_SIZE];
 	struct in_addr* ip;
 	char hostname[BUFFER_SIZE];
 
@@ -202,13 +203,47 @@ int main(int argc, char **argv) {
 		
 		puts(buffer);
 		
-		ptr = strcpy(buffer, "pong");
-		nbytes = 4;
+		userTokens = strtok(buffer, " ");
 		
-		nwritten = write(newfd, ptr, nbytes);
-		
-		if(nwritten == -1)
-			exit(1);
+		if(strcmp(userTokens, "REQ") == 0) {
+			userTokens = strtok(NULL, " ");
+			
+			if(userTokens != NULL) {
+				sprintf(reg, "UDP %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
+				nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
+				
+				if(nStat == -1) {
+					perror("Couldn't send message to STAT");
+					exit(1);
+				}
+				
+				ptr = strcpy(buffer, "Ok\n");
+				nwritten = write(newfd, ptr, strlen(ptr));
+				if(nwritten == -1)
+					exit(1);
+				
+				nreadStat = recvfrom(fdStat, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addrStat, &addrStatlen);
+
+				if(nreadStat == -1) {
+					perror("Couldn't receive message from STAT");
+					exit(1);
+				}
+
+				puts(buffer);
+					
+			} else {
+				ptr = strcpy(buffer, "KO\n");
+				nwritten = write(newfd, ptr, strlen(ptr));
+				if(nwritten == -1)
+					exit(1);
+			}
+			
+		} else {
+			ptr = strcpy(buffer, "KO\n");
+			nwritten = write(newfd, ptr, strlen(ptr));
+			if(nwritten == -1)
+				exit(1);
+		}
 		
 		close(newfd);
 	}

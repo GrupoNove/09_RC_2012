@@ -10,12 +10,13 @@
 
 #define PORT 58000
 #define NG 9
+#define BUFFER_SIZE 128
 
 int main(int argc, char **argv){
 	int fd, n, nbytes, nwritten, nread;
 	struct sockaddr_in addr;
 	struct hostent *hostptr;
-	char *ptr, buffer[128];
+	char req[BUFFER_SIZE], buffer[BUFFER_SIZE];
 	
 	char *username = argv[1];
 	char *SMBname;
@@ -80,14 +81,12 @@ int main(int argc, char **argv){
 	if(n == -1)
 		exit(1);
 	
-	ptr = strcpy(buffer, "ping");
-	nbytes = 4;
-	
-	nwritten = write(fd, ptr, nbytes);
+	sprintf(req, "REQ %s\n", username);
+	nwritten = write(fd, req, strlen(req));
 	if(nwritten == -1)
 		exit(1);
 		
-	nread = read(fd, buffer, 128);
+	nread = read(fd, buffer, BUFFER_SIZE);
 	
 	puts(buffer);
 	

@@ -57,10 +57,9 @@ int main(int argc, char **argv) {
 		
 		puts(bufferReceived);
 		
-		ptrBuffer = strcpy(bufferSend, "OK");
-		nbytes = 2;
+		ptrBuffer = strcpy(bufferSend, "OK\n");
 		
-		nwritten = sendto(fd, ptrBuffer, nbytes, 0, (struct sockaddr*)&clientaddr, addrlen);
+		nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		
 		if(nwritten == -1)
 			exit(1);
