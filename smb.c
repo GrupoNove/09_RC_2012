@@ -11,6 +11,7 @@
 #define SMBPORT 58000
 #define STATPORT 59000
 #define NG 9
+#define BUFFER_SIZE 128
 
 void getArgs(int argc, char **argv, int *SMBport, char *STATname, int *STATport) {
 	
@@ -124,10 +125,13 @@ int main(int argc, char **argv) {
 	struct sockaddr_in addrStat;
 	int nread, nwritten, nbytes;
 	struct sockaddr_in addr;
-	char *ptr, buffer[128];
+	char *ptr, buffer[BUFFER_SIZE];
 	struct hostent *hostptr;
 	int SMBport, STATport;
 	char *STATname;
+	char reg[BUFFER_SIZE];
+	struct in_addr* ip;
+	char hostname[BUFFER_SIZE];
 
 	getArgs(argc, argv, &SMBport, STATname, &STATport);
 	
@@ -138,7 +142,11 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	hostptr = gethostbyname("localhost");
+	if(gethostname(hostname, BUFFER_SIZE)==-1) {
+		perror("Couldn't send message to STAT");
+	        exit(1);
+	}
+	hostptr = gethostbyname(hostname);
 	
 	memset((void*)&addrStat, (int)'\0', sizeof(addrStat));
 	addrStat.sin_family = AF_INET;
@@ -146,14 +154,16 @@ int main(int argc, char **argv) {
 	addrStat.sin_port = htons(STATport);
 	
 	addrStatlen = sizeof(addrStat);
-	nStat = sendto(fdStat, "Hello!", 6, 0, (struct sockaddr*)&addrStat, addrStatlen);
+	ip = (struct in_addr*)(hostptr->h_addr_list[0]);
+	sprintf(reg, "REG %s %d\n", inet_ntoa(*ip), SMBport);
+	nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
 	
 	if(nStat == -1) {
 		perror("Couldn't send message to STAT");
 		exit(1);
 	}
 	
-	nreadStat = recvfrom(fdStat, buffer, 128, 0, (struct sockaddr*)&addrStat, &addrStatlen);
+	nreadStat = recvfrom(fdStat, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addrStat, &addrStatlen);
 	
 	if(nreadStat == -1) {
 		perror("Couldn't receive message from STAT");
@@ -185,7 +195,7 @@ int main(int argc, char **argv) {
 		if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1)
 			exit(1);
 
-		nread = read(newfd, buffer, 128);
+		nread = read(newfd, buffer, BUFFER_SIZE);
 		
 		if(nread == -1)
 			exit(1);
