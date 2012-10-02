@@ -9,12 +9,17 @@
 
 #define PORT 59000
 
+/* store data structure */
+//implementar a estrutura de dados para armazenar as palavras independetemente e contá-las
+
 int main(int argc, char **argv) {
 	int fd, addrlen, ret, newfd;
 	int nread, nwritten, nbytes;
 	struct sockaddr_in clientaddr;
 	struct sockaddr_in addr;
 	char *ptrBuffer, bufferReceived[128], bufferSend[128];
+	//contador provisório
+	int counter=0;
 
 	// obter argumento se houver
 	int STATport;
@@ -47,6 +52,8 @@ int main(int argc, char **argv) {
 	if(ret == -1)
 		exit(1);
 	
+	++counter;
+
 	while(1) {
 		addrlen = sizeof(addr);
 
@@ -55,7 +62,7 @@ int main(int argc, char **argv) {
 		if(nread == -1)
 			exit(1);
 		
-		puts(bufferReceived);
+		printf("Server: %s - #%d", bufferReceived+4, counter);
 		
 		ptrBuffer = strcpy(bufferSend, "OK\n");
 		
@@ -63,6 +70,9 @@ int main(int argc, char **argv) {
 		
 		if(nwritten == -1)
 			exit(1);
+
+		++counter;
+
 	}
 	
 	close(fd);
