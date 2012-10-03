@@ -31,6 +31,7 @@ typedef struct list {
 list *buildServerList() {
 	list *serverList;
 
+	serverList = (list*)malloc(sizeof(list));
 	memset(serverList, '\0', sizeof(list));
 	serverList->obj = NULL;
 	serverList->next = NULL;
@@ -40,6 +41,7 @@ list *buildServerList() {
 list *buildUserList() {
 	list *userList;
 
+	userList = (list*)malloc(sizeof(list));
 	memset(userList, '\0', sizeof(list));
 	userList->obj = NULL;
 	userList->next = NULL;
@@ -54,6 +56,7 @@ int addServer(list *servers, char *message) {
 	list *aux;
 
 	if(servers->obj==NULL) {
+		s = (server*)malloc(sizeof(server));
 		memset(s, '\0', sizeof(server));
 		s->id = message;
 		s->count = 1;
@@ -67,7 +70,9 @@ int addServer(list *servers, char *message) {
 			return ++(((server*)(aux->obj))->count);
 	}
 
+	nova = (list*)malloc(sizeof(list));
 	memset(nova, '\0', sizeof(list));
+	s = (server*)malloc(sizeof(server));
 	memset(s, '\0', sizeof(server));
 	s->id = message;
 	s->count = 1;
@@ -84,6 +89,7 @@ int addUser(list *users, char *message) {
 	user *u;
 
 	if(users->obj==NULL) {
+		u = (user*)malloc(sizeof(user));
 		memset(u, '\0', sizeof(user));
 		u->id = message;
 		u->count = 1;
@@ -97,7 +103,9 @@ int addUser(list *users, char *message) {
 			return ++(((user*)(aux->obj))->count);
 	}
 
+	nova = (list*)malloc(sizeof(list));
 	memset(nova, '\0', sizeof(list));
+	u = (user*)malloc(sizeof(user));
 	memset(u, '\0', sizeof(user));
 	u->id = message;
 	u->count = 1;
@@ -175,6 +183,7 @@ int main(int argc, char **argv) {
 			exit(1);
 	
 		if(strncmp(bufferReceived, "REG", 3)==0) {
+			bufferPrint = (char*)malloc(sizeof(char)*BUFFER_SIZE);
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
 			strncpy(bufferPrint, bufferReceived+4, strlen(bufferReceived)-5);
 			printf("Server: %s - #%d\n", bufferPrint, addServer(serverList,bufferPrint));
@@ -187,6 +196,7 @@ int main(int argc, char **argv) {
 					return 1;
 				}
 			}
+			bufferPrint = (char*)malloc(sizeof(char)*BUFFER_SIZE);
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
 			strncpy(bufferPrint, aux, strlen(bufferReceived)-1);
 			printf("Client: %s - #%d\n", bufferPrint, addUser(userList,bufferPrint));
