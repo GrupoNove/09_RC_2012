@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in clientaddr;
 	struct sockaddr_in addr;
 	char *ptrBuffer, bufferReceived[BUFFER_SIZE], bufferSend[BUFFER_SIZE], *bufferPrint;
-	char *aux;
+	char *aux, *userName;
 	int i;
 	list *userList, *serverList;
 
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 		}
 		else if(strncmp(bufferReceived, "UDP", 3)==0) {
 			for(i=0,aux=bufferReceived;i<4;i++) {
-				strtok(aux," ");
+				userName = strtok(aux," ");
 				if(aux==NULL) {
 					fprintf(stderr, "ERROR: missing user in UDP message...\n");
 					return 1;
@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
 			}
 			bufferPrint = (char*)malloc(sizeof(char)*BUFFER_SIZE);
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
-			strncpy(bufferPrint, aux, strlen(bufferReceived)-1);
+			strncpy(bufferPrint, userName, strlen(userName)-1);
 			printf("Client: %s - #%d\n", bufferPrint, addUser(userList,bufferPrint));
 		}
 		else {
