@@ -53,7 +53,7 @@ list *buildUserList() {
 int addServer(list *servers, char *message) {
 	list *nova;
 	server *s;
-	list *aux;
+	list *aux, *auxOld;
 
 	if(servers->obj==NULL) {
 		s = (server*)malloc(sizeof(server));
@@ -66,6 +66,7 @@ int addServer(list *servers, char *message) {
 	}
 
 	for(aux=servers; aux != NULL; aux=aux->next) {
+		auxOld = aux;
 		if(strcmp(message, ((server*)(aux->obj))->id)==0)
 			return ++(((server*)(aux->obj))->count);
 	}
@@ -78,14 +79,14 @@ int addServer(list *servers, char *message) {
 	s->count = 1;
 	nova->obj = (void*)s;
 	nova->next = NULL;
-	aux = nova;
+	auxOld->next = nova;
 
 	return 1;
 }
 
 // test if user is already registered, else add it to list
 int addUser(list *users, char *message) {
-	list *nova, *aux;
+	list *nova, *aux, *auxOld;
 	user *u;
 
 	if(users->obj==NULL) {
@@ -99,6 +100,7 @@ int addUser(list *users, char *message) {
 	}
 
 	for(aux=users; aux != NULL; aux=aux->next) {
+		auxOld = aux;
 		if(strcmp(message, ((user*)(aux->obj))->id)==0)
 			return ++(((user*)(aux->obj))->count);
 	}
@@ -111,7 +113,7 @@ int addUser(list *users, char *message) {
 	u->count = 1;
 	nova->obj = (void*)u;
 	nova->next = NULL;
-	aux = nova;
+	auxOld->next = nova;
 
 	return 1;
 }
@@ -136,7 +138,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in clientaddr;
 	struct sockaddr_in addr;
 	char *ptrBuffer, bufferReceived[BUFFER_SIZE], bufferSend[BUFFER_SIZE], *bufferPrint;
-	char *aux, *userName;
+	char *aux;
 	int i;
 	list *userList, *serverList;
 
@@ -185,12 +187,14 @@ int main(int argc, char **argv) {
 		if(strncmp(bufferReceived, "REG", 3)==0) {
 			bufferPrint = (char*)malloc(sizeof(char)*BUFFER_SIZE);
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
-			strncpy(bufferPrint, bufferReceived+4, strlen(bufferReceived)-5);
+			strncpy(bufferPrint, bufferReceived+4, strlen(bufferReceived));
+			bufferPrint = strtok(bufferPrint, "\n");
 			printf("Server: %s - #%d\n", bufferPrint, addServer(serverList,bufferPrint));
 		}
 		else if(strncmp(bufferReceived, "UDP", 3)==0) {
-			for(i=0,aux=bufferReceived;i<4;i++) {
-				userName = strtok(aux," ");
+			aux = strtok(bufferReceived," ");
+			for(i=0;i<3;i++) {
+				aux = strtok(NULL," \n");
 				if(aux==NULL) {
 					fprintf(stderr, "ERROR: missing user in UDP message...\n");
 					return 1;
@@ -198,7 +202,7 @@ int main(int argc, char **argv) {
 			}
 			bufferPrint = (char*)malloc(sizeof(char)*BUFFER_SIZE);
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
-			strncpy(bufferPrint, userName, strlen(userName)-1);
+			strncpy(bufferPrint, aux, strlen(aux));
 			printf("Client: %s - #%d\n", bufferPrint, addUser(userList,bufferPrint));
 		}
 		else {

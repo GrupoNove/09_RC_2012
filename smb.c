@@ -13,29 +13,29 @@
 #define NG 9
 #define BUFFER_SIZE 128
 
-void getArgs(int argc, char **argv, int *SMBport, char *STATname, int *STATport) {
+void getArgs(int argc, char **argv, int *SMBport, char **STATname, int *STATport) {
 	
 	if (argc == 1) {
 		*SMBport = SMBPORT + NG;
-		STATname = "localhost";
+		*STATname = "localhost";
 		*STATport = STATPORT;
 
 	} else if (argc == 3) {
 	
 		if (!strcmp(argv[1], "-p")) {
 			*SMBport = atoi(argv[2]);
-			STATname = "localhost";
+			*STATname = "localhost";
 			*STATport = STATPORT;
 		}
 		else if (!strcmp(argv[1], "-n")) {
-			STATname = argv[2];
+			*STATname = argv[2];
 			*SMBport = SMBPORT + NG;
 			*STATport = STATPORT;
 		}
 		else if (!strcmp(argv[1], "-t")) {
 			*STATport = atoi(argv[2]);
 			*SMBport = SMBPORT + NG;
-			STATname = "localhost";
+			*STATname = "localhost";
 		} else {
 			printf("\nArgument not known: %s\n", argv[1]);
 			exit(1);
@@ -44,32 +44,32 @@ void getArgs(int argc, char **argv, int *SMBport, char *STATname, int *STATport)
 	} else if(argc == 5) {
 		
 		if (!strcmp(argv[1], "-n") && !strcmp(argv[3], "-p")) {
-			STATname = argv[2];
+			*STATname = argv[2];
 			*SMBport = atoi(argv[4]);
 			*STATport = STATPORT;
 		}
 		else if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-n")) {
 			*SMBport = atoi(argv[2]);
-			STATname = argv[4];
+			*STATname = argv[4];
 			*STATport = STATPORT;
 		}
 		else if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-t")) {
 			*SMBport = atoi(argv[2]);
 			*STATport = atoi(argv[4]);
-			STATname = "localhost";
+			*STATname = "localhost";
 		}
 		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-p")) {
 			*STATport = atoi(argv[2]);
 			*SMBport = atoi(argv[4]);
-			STATname = "localhost";
+			*STATname = "localhost";
 		}
 		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-n")) {
 			*STATport = atoi(argv[2]);
-			STATname = argv[4];
+			*STATname = argv[4];
 			*SMBport = SMBPORT + NG;
 		}
 		else if (!strcmp(argv[1], "-n") && !strcmp(argv[3], "-t")) {
-			STATname = argv[2];
+			*STATname = argv[2];
 			*STATport = atoi(argv[4]);
 			*SMBport = SMBPORT + NG;
 		} else {
@@ -81,27 +81,27 @@ void getArgs(int argc, char **argv, int *SMBport, char *STATname, int *STATport)
 		
 		if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-n") && !strcmp(argv[5], "-t")) {
 			*SMBport = atoi(argv[2]);
-			STATname = argv[4];
+			*STATname = argv[4];
 			*STATport = atoi(argv[6]);
 		}
 		else if (!strcmp(argv[1], "-n") && !strcmp(argv[3], "-p") && !strcmp(argv[5], "-t")) {
-			STATname = argv[2];
+			*STATname = argv[2];
 			*SMBport = atoi(argv[4]);
 			*STATport = atoi(argv[6]);
 		}
 		else if (!strcmp(argv[1], "-p") && !strcmp(argv[3], "-t") && !strcmp(argv[5], "-n")) {
 			*SMBport = atoi(argv[2]);
 			*STATport = atoi(argv[4]);
-			STATname = argv[6];
+			*STATname = argv[6];
 		}
 		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-p") && !strcmp(argv[5], "-n")) {
 			*STATport = atoi(argv[2]);
 			*SMBport = atoi(argv[4]);
-			STATname = argv[6];
+			*STATname = argv[6];
 		}
 		else if (!strcmp(argv[1], "-t") && !strcmp(argv[3], "-n") && !strcmp(argv[5], "-p")) {
 			*STATport = atoi(argv[6]);
-			STATname = argv[2];
+			*STATname = argv[2];
 			*SMBport = atoi(argv[4]);
 		} else {
 			printf("\nArgument not known: %s %s\n", argv[2], argv[4]);
@@ -111,7 +111,7 @@ void getArgs(int argc, char **argv, int *SMBport, char *STATname, int *STATport)
 	}
 
 	else {
-		printf("\nCorrect sintaxe: SMB [-p SMBport] [-n STATname] [-t STATport]\n");
+		printf("\nCorrect sintaxe: SMB [-p SMBport] [-n *STATname] [-t STATport]\n");
 		exit(1);
 	}
 
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
 	struct in_addr* ip;
 	char hostname[BUFFER_SIZE];
 
-	getArgs(argc, argv, &SMBport, STATname, &STATport);
+	getArgs(argc, argv, &SMBport, &STATname, &STATport);
 	
 	fdStat = socket(AF_INET, SOCK_DGRAM, 0);
 	
@@ -143,19 +143,22 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	if(gethostname(hostname, BUFFER_SIZE)==-1) {
-		perror("Couldn't send message to STAT");
-	        exit(1);
-	}
-	hostptr = gethostbyname(hostname);
+	hostptr = gethostbyname(STATname);
+	puts(STATname);
+	puts(hostptr->h_name);
 	
 	memset((void*)&addrStat, (int)'\0', sizeof(addrStat));
 	addrStat.sin_family = AF_INET;
 	addrStat.sin_addr.s_addr = ((struct in_addr*)(hostptr->h_addr_list[0]))->s_addr;
 	addrStat.sin_port = htons(STATport);
 	
+	if(gethostname(hostname, BUFFER_SIZE)==-1) {
+		perror("Couldn't send message to STAT");
+	        exit(1);
+	}
+	hostptr = gethostbyname(hostname);
 	addrStatlen = sizeof(addrStat);
-	ip = (struct in_addr*)(hostptr->h_addr_list[0]);
+	ip = (struct in_addr*)(hostptr->h_addr_list[1]);
 	sprintf(reg, "REG %s %d\n", inet_ntoa(*ip), SMBport);
 	nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
 	
