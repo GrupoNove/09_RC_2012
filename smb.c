@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
 	struct sockaddr_in addrStat;
 	int nread, nwritten, nbytes;
 	struct sockaddr_in addr;
-	char *ptr, buffer[BUFFER_SIZE];
+	char *ptr, buffer[BUFFER_SIZE], buffer2[BUFFER_SIZE];
 	struct hostent *hostptr;
 	int SMBport, STATport;
 	char *STATname;
@@ -157,6 +157,7 @@ int main(int argc, char **argv) {
 	hostptr = gethostbyname(hostname);
 	addrStatlen = sizeof(addrStat);
 	ip = (struct in_addr*)(hostptr->h_addr_list[1]);
+	if(ip == NULL) ip = (struct in_addr*)(hostptr->h_addr_list[0]);
 	sprintf(reg, "REG %s %d\n", inet_ntoa(*ip), SMBport);
 	nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
 	
@@ -217,20 +218,22 @@ int main(int argc, char **argv) {
 					perror("Couldn't send message to STAT");
 					exit(1);
 				}
+
+				printf("OK: sent msg to stat\n");
 				
-				ptr = strcpy(buffer, "Ok\n");
-				nwritten = write(newfd, ptr, strlen(ptr));
-				if(nwritten == -1)
-					exit(1);
-				
-				nreadStat = recvfrom(fdStat, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addrStat, &addrStatlen);
+				memset(buffer2, '\0', sizeof(buffer2));
+				nreadStat = recvfrom(fdStat, buffer2, BUFFER_SIZE, 0, (struct sockaddr*)&addrStat, &addrStatlen);
 
 				if(nreadStat == -1) {
 					perror("Couldn't receive message from STAT");
 					exit(1);
 				}
+				
+				nwritten = write(newfd, buffer2, strlen(buffer2));
+				if(nwritten == -1)
+					exit(1);
 
-				printf("%s", buffer);
+				printf("%s", buffer2);
 					
 			} else {
 				ptr = strcpy(buffer, "KO\n");

@@ -27,6 +27,37 @@ typedef struct list {
 	struct list *next;
 } list;
 
+//roundrobin de mensagens
+list *buildMsgs() {
+	list *msgs, *aux, *first;
+	char *msg;
+	
+	msgs = (list*)malloc(sizeof(list));
+	msg = (char*)malloc(sizeof(char)*5);
+	strcpy(msg, "Olá!");
+	msgs->obj = (void*)msg;
+	first = aux = msgs;
+
+	msgs = (list*)malloc(sizeof(list));
+	msg = (char*)malloc(sizeof(char)*10);
+	strcpy(msg, "Benvindo!");
+	msgs->obj = (void*)msg;
+	aux->next = msgs;
+	aux = msgs;
+
+	msgs = (list*)malloc(sizeof(list));
+	msg = (char*)malloc(sizeof(char)*20);
+	strcpy(msg, "Welcome dear user!");
+	msgs->obj = (void*)msg;
+	aux->next = msgs;
+	aux = msgs;
+
+	aux->next = first;
+
+	return msgs;
+}
+
+
 //build lists
 list *buildServerList() {
 	list *serverList;
@@ -140,7 +171,10 @@ int main(int argc, char **argv) {
 	char *ptrBuffer, bufferReceived[BUFFER_SIZE], bufferSend[BUFFER_SIZE], *bufferPrint;
 	char *aux;
 	int i;
-	list *userList, *serverList;
+	list *userList, *serverList, *msgs;
+
+	//obter lista round-robin de mensagens
+	msgs = buildMsgs();
 
 	// obter argumento se houver
 	int STATport;
@@ -190,6 +224,14 @@ int main(int argc, char **argv) {
 			strncpy(bufferPrint, bufferReceived+4, strlen(bufferReceived));
 			bufferPrint = strtok(bufferPrint, "\n");
 			printf("Server: %s - #%d\n", bufferPrint, addServer(serverList,bufferPrint));
+
+			memset(bufferSend, '\0', sizeof(bufferSend));
+			ptrBuffer = strcpy(bufferSend, "OK\n");
+			
+			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
+		
+			if(nwritten == -1)
+				exit(1);
 		}
 		else if(strncmp(bufferReceived, "UDP", 3)==0) {
 			aux = strtok(bufferReceived," ");
@@ -204,18 +246,20 @@ int main(int argc, char **argv) {
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
 			strncpy(bufferPrint, aux, strlen(aux));
 			printf("Client: %s - #%d\n", bufferPrint, addUser(userList,bufferPrint));
+
+			ptrBuffer = (char*)(msgs->obj);
+			msgs = msgs->next;
+			
+			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
+		
+			if(nwritten == -1)
+				exit(1);
 		}
 		else {
 			fprintf(stderr, "ERROR: message not known...\n");
 			return 1;
 		}
-		
-		ptrBuffer = strcpy(bufferSend, "OK\n");
-		
-		nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
-		
-		if(nwritten == -1)
-			exit(1);
+
 
 	}
 
