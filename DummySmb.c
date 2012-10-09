@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 	addrStatlen = sizeof(addrStat);
 	ip = (struct in_addr*)(hostptr->h_addr_list[1]);
 	if(ip == NULL) ip = (struct in_addr*)(hostptr->h_addr_list[0]);
-	sprintf(reg, "REG %s %d\n", inet_ntoa(*ip), SMBport);
+	sprintf(reg, "OLA %s %d\n", inet_ntoa(*ip), SMBport);
 	nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
 	
 	if(nStat == -1) {
@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
 			userTokens = strtok(NULL, " ");
 			
 			if(userTokens != NULL) {
-				sprintf(reg, "UDP %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
+				sprintf(reg, "OPOP %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
 				nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
 				
 				if(nStat == -1) {
@@ -238,10 +238,8 @@ int main(int argc, char **argv) {
 				}
 				
 				nwritten = write(newfd, buffer2, strlen(buffer2));
-				if(nwritten == -1) {
-					fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+				if(nwritten == -1)
 					exit(1);
-				}
 
 				printf("%s", buffer2);
 					
@@ -249,10 +247,8 @@ int main(int argc, char **argv) {
 				fprintf(stderr, "ERROR: message unknown...\n");
 				ptr = strcpy(buffer, "KO\n");
 				nwritten = write(newfd, ptr, strlen(ptr));
-				if(nwritten == -1) {
-					fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+				if(nwritten == -1)
 					exit(1);
-				}
 			}
 			
 		} else {

@@ -81,12 +81,10 @@ int main(int argc, char **argv){
 	if(n == -1)
 		exit(1);
 	
-	sprintf(req, "REQ %s\n", username);
+	sprintf(req, "OLA %s\n", username);
 	nwritten = write(fd, req, strlen(req));
-	if(nwritten == -1) {
-		fprintf(stderr, "ERROR: Couldn't receive message from SMB...\n");
+	if(nwritten == -1)
 		exit(1);
-	}
 		
 	nread = read(fd, buffer, BUFFER_SIZE);
 	

@@ -195,8 +195,10 @@ int main(int argc, char **argv) {
 		return 0;
 	}
 	
-	if((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	if((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		fprintf(stderr, "ERROR: Couldn't create socket...\n");
 		exit(1);
+	}
 	
 	memset((void*)&addr, (int)'\0', sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -204,8 +206,10 @@ int main(int argc, char **argv) {
 	addr.sin_port = htons(STATport);
 	
 	ret = bind(fd, (struct sockaddr*)&addr, sizeof(addr));
-	if(ret == -1)
+	if(ret == -1) {
+		fprintf(stderr, "ERROR: Couldn't bind socket...\n");
 		exit(1);
+	}
 	
 	serverList = buildServerList();
 	userList = buildUserList();
@@ -215,8 +219,10 @@ int main(int argc, char **argv) {
 
 		nread = recvfrom(fd, bufferReceived, BUFFER_SIZE, 0, (struct sockaddr*)&clientaddr, &addrlen);
 		
-		if(nread == -1)
+		if(nread == -1) {
+			fprintf(stderr, "ERROR: message couldn't be read from SMB...\n");
 			exit(1);
+		}
 	
 		if(strncmp(bufferReceived, "REG", 3)==0) {
 			bufferPrint = (char*)malloc(sizeof(char)*BUFFER_SIZE);
@@ -230,8 +236,10 @@ int main(int argc, char **argv) {
 			
 			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		
-			if(nwritten == -1)
+			if(nwritten == -1) {
+				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");
 				exit(1);
+			}
 		}
 		else if(strncmp(bufferReceived, "UDP", 3)==0) {
 			aux = strtok(bufferReceived," ");
@@ -252,12 +260,21 @@ int main(int argc, char **argv) {
 			
 			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		
-			if(nwritten == -1)
+			if(nwritten == -1) {
+				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");
 				exit(1);
+			}
 		}
 		else {
-			fprintf(stderr, "ERROR: message not known...\n");
-			return 1;
+			char buffer[BUFFER_SIZE];
+			ptrBuffer = strcpy(buffer, "KO\n");
+			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
+			fprintf(stderr, "ERROR: message unknown...\n");
+			
+			if(nwritten == -1) {
+				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");
+				exit(1);
+			}
 		}
 
 
