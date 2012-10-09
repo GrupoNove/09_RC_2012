@@ -144,8 +144,6 @@ int main(int argc, char **argv) {
 	}
 	
 	hostptr = gethostbyname(STATname);
-	puts(STATname);
-	puts(hostptr->h_name);
 	
 	memset((void*)&addrStat, (int)'\0', sizeof(addrStat));
 	addrStat.sin_family = AF_INET;
@@ -174,7 +172,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	puts(buffer);
+	printf("%s", buffer);
 	
 	if((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("Couldn't create de TCP socket.");
@@ -204,7 +202,7 @@ int main(int argc, char **argv) {
 		if(nread == -1)
 			exit(1);
 		
-		puts(buffer);
+		printf("%s", buffer);
 		
 		userTokens = strtok(buffer, " ");
 		
@@ -232,7 +230,7 @@ int main(int argc, char **argv) {
 					exit(1);
 				}
 
-				puts(buffer);
+				printf("%s", buffer);
 					
 			} else {
 				ptr = strcpy(buffer, "KO\n");
