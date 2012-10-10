@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 			printf("Server: %s - #%d\n", bufferPrint, addServer(serverList,bufferPrint));
 
 			memset(bufferSend, '\0', sizeof(bufferSend));
-			ptrBuffer = strcpy(bufferSend, "OK\n");
+			ptrBuffer = strcpy(bufferSend, "STAT: OK smb was registered\n");
 			
 			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		
@@ -255,8 +255,7 @@ int main(int argc, char **argv) {
 			strncpy(bufferPrint, aux, strlen(aux));
 			printf("Client: %s - #%d\n", bufferPrint, addUser(userList,bufferPrint));
 
-			ptrBuffer = (char*)(msgs->obj);
-			msgs = msgs->next;
+			strcpy(ptrBuffer, "STAT: OK user was registered\n");
 			
 			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		

@@ -91,7 +91,7 @@ int main(int argc, char **argv){
 	memset(buffer, '\0', sizeof(buffer));
 	nread = read(fd, buffer, BUFFER_SIZE);
 	
-	puts(buffer);
+	printf("%s", buffer);
 	
 	close(fd);
 	exit(0);

@@ -117,6 +117,48 @@ void getArgs(int argc, char **argv, int *SMBport, char **STATname, int *STATport
 
 }
 
+char *read_file(int line_num, char *user_file_message)
+{
+	static const char filename[] = "file";
+    	FILE *file = fopen ( filename, "r" );
+    	int rnd, temp;
+    //	char user_file_message[BUFFER_SIZE];
+  	if ( file != NULL ) {
+  		/* initialize random seed: */
+		srand ( time(NULL) );
+
+		/* generate secret number: */
+		rnd = rand() % line_num + 1;
+		temp = 1;
+    		char line [ BUFFER_SIZE ]; /* or other suitable maximum line size */
+    		while ( fgets ( line, sizeof line, file ) != NULL ) { /* read a line */
+    			if (temp == rnd) {
+    				strcpy (user_file_message, line);
+    				break;
+    			} else
+    				temp++;
+    		}
+    		fclose ( file );
+    	} else {
+    		perror ( filename ); /* why didn't the file open? */
+    	}
+    	return user_file_message;
+}
+
+/* Conta o numero de linhas do ficheiro de resposta */
+int count_lines() 
+{
+	int lines = 0;
+	static const char filename[] = "file";
+    	FILE *file = fopen ( filename, "r" );
+   	if ( file != NULL ) {
+   		char line [ BUFFER_SIZE ];
+		while ( fgets ( line, sizeof line, file ) != NULL )
+			lines++;
+	}
+	close ( file );
+	return lines;
+}
 
 int main(int argc, char **argv) {
 	int fd, addrlen, ret, newfd;
@@ -133,6 +175,10 @@ int main(int argc, char **argv) {
 	char reg[BUFFER_SIZE], udp[BUFFER_SIZE];
 	struct in_addr* ip;
 	char hostname[BUFFER_SIZE];
+	int line_num;
+	char user_file_message[BUFFER_SIZE];
+
+	line_num = count_lines();
 
 	getArgs(argc, argv, &SMBport, &STATname, &STATport);
 	
@@ -213,11 +259,16 @@ int main(int argc, char **argv) {
 		
 		printf("%s", buffer);
 		
-		userTokens = strtok(buffer, " ");
+		strcpy(user_file_message, read_file(line_num, user_file_message));
+		nwritten = write(newfd, user_file_message, strlen(user_file_message));
+		if(nwritten == -1) {
+			fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+			exit(1);
+		}
 		
+		userTokens = strtok(buffer, " ");
 		if(strcmp(userTokens, "REQ") == 0) {
 			userTokens = strtok(NULL, " ");
-			
 			if(userTokens != NULL) {
 				sprintf(reg, "UDP %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
 				nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
@@ -226,20 +277,13 @@ int main(int argc, char **argv) {
 					fprintf(stderr, "ERROR: Couldn't send message to STAT...\n");
 					exit(1);
 				}
-
-				printf("OK: sent msg to stat\n");
+				printf("Sent msg to stat\n");
 				
 				memset(buffer2, '\0', sizeof(buffer2));
 				nreadStat = recvfrom(fdStat, buffer2, BUFFER_SIZE, 0, (struct sockaddr*)&addrStat, &addrStatlen);
 
 				if(nreadStat == -1) {
 					fprintf(stderr, "ERROR: Couldn't receive message from STAT...\n");
-					exit(1);
-				}
-				
-				nwritten = write(newfd, buffer2, strlen(buffer2));
-				if(nwritten == -1) {
-					fprintf(stderr, "ERROR: Couldn't send message to user...\n");
 					exit(1);
 				}
 
@@ -264,6 +308,10 @@ int main(int argc, char **argv) {
 		}
 		
 		close(newfd);
+		
+		int i;
+		for(i = 0; i < BUFFER_SIZE; i++)
+			buffer[i] = '\0';
 	}
 	
 	close(fd);
