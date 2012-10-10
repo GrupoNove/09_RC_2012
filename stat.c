@@ -34,20 +34,20 @@ list *buildMsgs() {
 	
 	msgs = (list*)malloc(sizeof(list));
 	msg = (char*)malloc(sizeof(char)*5);
-	strcpy(msg, "Olá!");
+	strcpy(msg, "Olá!\n");
 	msgs->obj = (void*)msg;
 	first = aux = msgs;
 
 	msgs = (list*)malloc(sizeof(list));
 	msg = (char*)malloc(sizeof(char)*10);
-	strcpy(msg, "Benvindo!");
+	strcpy(msg, "Benvindo!\n");
 	msgs->obj = (void*)msg;
 	aux->next = msgs;
 	aux = msgs;
 
 	msgs = (list*)malloc(sizeof(list));
 	msg = (char*)malloc(sizeof(char)*20);
-	strcpy(msg, "Welcome dear user!");
+	strcpy(msg, "Welcome dear user!\n");
 	msgs->obj = (void*)msg;
 	aux->next = msgs;
 	aux = msgs;

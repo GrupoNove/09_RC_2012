@@ -87,7 +87,8 @@ int main(int argc, char **argv){
 		fprintf(stderr, "ERROR: Couldn't receive message from SMB...\n");
 		exit(1);
 	}
-		
+	
+	memset(buffer, '\0', sizeof(buffer));
 	nread = read(fd, buffer, BUFFER_SIZE);
 	
 	puts(buffer);
