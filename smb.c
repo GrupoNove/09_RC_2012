@@ -197,9 +197,11 @@ int main(int argc, char **argv) {
 	addrStat.sin_port = htons(STATport);
 	
 	if(gethostname(hostname, BUFFER_SIZE)==-1) {
-		fprintf(stderr, "ERROR: Couldn't send message to STAT...\n");
-	    exit(1);
+    fprintf(stderr, "ERROR: Couldn't send message to STAT...\n");
+    close(fdStat);
+    exit(1);
 	}
+	
 	hostptr = gethostbyname(hostname);
 	addrStatlen = sizeof(addrStat);
 	ip = (struct in_addr*)(hostptr->h_addr_list[1]);
@@ -209,13 +211,16 @@ int main(int argc, char **argv) {
 	
 	if(nStat == -1) {
 		fprintf(stderr, "ERROR: Couldn't send message to STAT...\n");
+    close(fdStat);
 		exit(1);
 	}
 	
+	memset(buffer, '\0', sizeof(buffer));
 	nreadStat = recvfrom(fdStat, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&addrStat, &addrStatlen);
 	
 	if(nreadStat == -1) {
 		fprintf(stderr, "ERROR: Couldn't receive message from STAT...\n");
+    close(fdStat);
 		exit(1);
 	}
 	
@@ -223,6 +228,7 @@ int main(int argc, char **argv) {
 	
 	if((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr, "ERROR: Couldn't create de TCP socket...\n");
+    close(fdStat);
 		exit(1);
 	}
 	
@@ -234,11 +240,15 @@ int main(int argc, char **argv) {
 	ret = bind(fd, (struct sockaddr*)&addr, sizeof(addr));
 	if(ret == -1) {
 		fprintf(stderr, "ERROR: Couldn't bind socket...\n");
+    close(fdStat);
+    close(fd);
 		exit(1);
 	}
 	
 	if(listen(fd,5) == -1) {
 		fprintf(stderr, "ERROR: Couldn't listen...\n");
+    close(fdStat);
+    close(fd);
 		exit(1);
 	}
 	
@@ -247,13 +257,19 @@ int main(int argc, char **argv) {
 		
 		if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1) {
 			fprintf(stderr, "ERROR: Couldn't accept TCP connection...\n");
+      close(fdStat);
+      close(fd);
 			exit(1);
 		}
-
+  
+    memset(buffer, '\0', sizeof(buffer));
 		nread = read(newfd, buffer, BUFFER_SIZE);
 		
 		if(nread == -1) {
 			fprintf(stderr, "ERROR: Couldn't read message from User...\n");
+      close(fdStat);
+      close(fd);
+      close(newfd);
 			exit(1);
 		}
 		
@@ -263,18 +279,24 @@ int main(int argc, char **argv) {
 		nwritten = write(newfd, user_file_message, strlen(user_file_message));
 		if(nwritten == -1) {
 			fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+      close(fdStat);
+      close(fd);
+      close(newfd);
 			exit(1);
 		}
 		
-		userTokens = strtok(buffer, " ");
+		userTokens = strtok(buffer, " \n");
 		if(strcmp(userTokens, "REQ") == 0) {
-			userTokens = strtok(NULL, " ");
+			userTokens = strtok(NULL, " \n");
 			if(userTokens != NULL) {
-				sprintf(reg, "UDP %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
+				sprintf(reg, "UPD %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
 				nStat = sendto(fdStat, reg, strlen(reg), 0, (struct sockaddr*)&addrStat, addrStatlen);
 				
 				if(nStat == -1) {
 					fprintf(stderr, "ERROR: Couldn't send message to STAT...\n");
+          close(fdStat);
+          close(fd);
+          close(newfd);
 					exit(1);
 				}
 				printf("Sent msg to stat\n");
@@ -284,6 +306,9 @@ int main(int argc, char **argv) {
 
 				if(nreadStat == -1) {
 					fprintf(stderr, "ERROR: Couldn't receive message from STAT...\n");
+          close(fdStat);
+          close(fd);
+          close(newfd);
 					exit(1);
 				}
 
@@ -295,6 +320,9 @@ int main(int argc, char **argv) {
 				nwritten = write(newfd, ptr, strlen(ptr));
 				if(nwritten == -1) {
 					fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+          close(fdStat);
+          close(fd);
+          close(newfd);
 					exit(1);
 				}
 			}
@@ -303,8 +331,13 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "ERROR: message unknown...\n");
 			ptr = strcpy(buffer, "KO\n");
 			nwritten = write(newfd, ptr, strlen(ptr));
-			if(nwritten == -1)
+			if(nwritten == -1) {
+			  fprintf(stderr, "ERROR: couldn't send message to user...\n");
+        close(fdStat);
+        close(fd);
+        close(newfd);
 				exit(1);
+			}
 		}
 		
 		close(newfd);

@@ -78,13 +78,18 @@ int main(int argc, char **argv){
 	addr.sin_port = htons(SMBport);
 	
 	n = connect(fd,(struct sockaddr*)&addr, sizeof(addr));
-	if(n == -1)
+	if(n == -1) {
+		fprintf(stderr, "ERROR: Couldn't connect the socket");
+		close(fd);
 		exit(1);
+	}
 	
+	memset(req, '\0', sizeof(req));
 	sprintf(req, "REQ %s\n", username);
 	nwritten = write(fd, req, strlen(req));
 	if(nwritten == -1) {
 		fprintf(stderr, "ERROR: Couldn't receive message from SMB...\n");
+		close(fd);
 		exit(1);
 	}
 	

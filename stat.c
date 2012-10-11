@@ -221,6 +221,7 @@ int main(int argc, char **argv) {
 		
 		if(nread == -1) {
 			fprintf(stderr, "ERROR: message couldn't be read from SMB...\n");
+			close(fd);
 			exit(1);
 		}
 	
@@ -232,21 +233,23 @@ int main(int argc, char **argv) {
 			printf("Server: %s - #%d\n", bufferPrint, addServer(serverList,bufferPrint));
 
 			memset(bufferSend, '\0', sizeof(bufferSend));
-			ptrBuffer = strcpy(bufferSend, "STAT: OK smb was registered\n");
+			ptrBuffer = strcpy(bufferSend, "OK\n");
 			
 			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		
 			if(nwritten == -1) {
 				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");
+				close(fd);
 				exit(1);
 			}
 		}
-		else if(strncmp(bufferReceived, "UDP", 3)==0) {
+		else if(strncmp(bufferReceived, "UPD", 3)==0) {
 			aux = strtok(bufferReceived," ");
 			for(i=0;i<3;i++) {
 				aux = strtok(NULL," \n");
 				if(aux==NULL) {
-					fprintf(stderr, "ERROR: missing user in UDP message...\n");
+					fprintf(stderr, "ERROR: missing user in UPD message...\n");
+					close(fd);
 					return 1;
 				}
 			}
@@ -254,13 +257,15 @@ int main(int argc, char **argv) {
 			memset(bufferPrint, '\0', sizeof(char)*BUFFER_SIZE);
 			strncpy(bufferPrint, aux, strlen(aux));
 			printf("Client: %s - #%d\n", bufferPrint, addUser(userList,bufferPrint));
-
-			strcpy(ptrBuffer, "STAT: OK user was registered\n");
+			
+			memset(ptrBuffer, '\0', sizeof(ptrBuffer));
+			strcpy(ptrBuffer, "OK\n");
 			
 			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 		
 			if(nwritten == -1) {
 				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");
+				close(fd);
 				exit(1);
 			}
 		}
@@ -271,7 +276,8 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "ERROR: message unknown...\n");
 			
 			if(nwritten == -1) {
-				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");
+				fprintf(stderr, "ERROR: mesTsage couldn't be sent to SMB...\n");
+				close(fd);
 				exit(1);
 			}
 		}
