@@ -218,7 +218,6 @@ int main(int argc, char **argv) {
 		addrlen = sizeof(addr);
 
 		nread = recvfrom(fd, bufferReceived, BUFFER_SIZE, 0, (struct sockaddr*)&clientaddr, &addrlen);
-		
 		if(nread == -1) {
 			fprintf(stderr, "ERROR: message couldn't be read from SMB...\n");
 			close(fd);
@@ -271,15 +270,15 @@ int main(int argc, char **argv) {
 		}
 		else {
 			char buffer[BUFFER_SIZE];
-			ptrBuffer = strcpy(buffer, "KO\n");
-			nwritten = sendto(fd, ptrBuffer, strlen(ptrBuffer), 0, (struct sockaddr*)&clientaddr, addrlen);
+			memset(buffer, '\0', sizeof(buffer));
+			strcpy(buffer, "KO\n");
+			nwritten = sendto(fd, buffer, strlen(buffer), 0, (struct sockaddr*)&clientaddr, addrlen);
 			fprintf(stderr, "ERROR: message unknown...\n");
 			
-			if(nwritten == -1) {
-				fprintf(stderr, "ERROR: mesTsage couldn't be sent to SMB...\n");
-				close(fd);
-				exit(1);
-			}
+			if(nwritten == -1)
+				fprintf(stderr, "ERROR: message couldn't be sent to SMB...\n");		
+			close(fd);
+			exit(1);
 		}
 
 

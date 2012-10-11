@@ -1,3 +1,5 @@
+all: smb stat user
+
 smb: smb.c
 	gcc smb.c -o SMB
 
@@ -7,13 +9,5 @@ stat: stat.c
 user: user.c
 	gcc user.c -o user
 
-dummyUser: dummyUser.c
-	gcc dummyUser.c -o dummyUser
-
-dummySMB: dummySMB.c
-	gcc dummySMB.c -o dummySMB
-
-all: smb stat user dummyUser dummySMB
-
 clean:
-	rm SMB STAT user dummyUser dummySMB
+	rm SMB STAT user

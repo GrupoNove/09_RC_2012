@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
 	
 	if(nreadStat == -1) {
 		fprintf(stderr, "ERROR: Couldn't receive message from STAT...\n");
-    close(fdStat);
+    	close(fdStat);
 		exit(1);
 	}
 	
@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
 	
 	if((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		fprintf(stderr, "ERROR: Couldn't create de TCP socket...\n");
-    close(fdStat);
+    	close(fdStat);
 		exit(1);
 	}
 	
@@ -240,15 +240,15 @@ int main(int argc, char **argv) {
 	ret = bind(fd, (struct sockaddr*)&addr, sizeof(addr));
 	if(ret == -1) {
 		fprintf(stderr, "ERROR: Couldn't bind socket...\n");
-    close(fdStat);
-    close(fd);
+    	close(fdStat);
+    	close(fd);
 		exit(1);
 	}
 	
 	if(listen(fd,5) == -1) {
 		fprintf(stderr, "ERROR: Couldn't listen...\n");
-    close(fdStat);
-    close(fd);
+    	close(fdStat);
+    	close(fd);
 		exit(1);
 	}
 	
@@ -257,36 +257,38 @@ int main(int argc, char **argv) {
 		
 		if((newfd = accept(fd, (struct sockaddr*)&addr, &addrlen)) == -1) {
 			fprintf(stderr, "ERROR: Couldn't accept TCP connection...\n");
-      close(fdStat);
-      close(fd);
+   			close(fdStat);
+      		close(fd);
 			exit(1);
 		}
   
-    memset(buffer, '\0', sizeof(buffer));
+    	memset(buffer, '\0', sizeof(buffer));
 		nread = read(newfd, buffer, BUFFER_SIZE);
 		
 		if(nread == -1) {
 			fprintf(stderr, "ERROR: Couldn't read message from User...\n");
-      close(fdStat);
-      close(fd);
-      close(newfd);
+      		close(fdStat);
+      		close(fd);
+      		close(newfd);
 			exit(1);
 		}
 		
 		printf("%s", buffer);
 		
-		strcpy(user_file_message, read_file(line_num, user_file_message));
-		nwritten = write(newfd, user_file_message, strlen(user_file_message));
-		if(nwritten == -1) {
-			fprintf(stderr, "ERROR: Couldn't send message to user...\n");
-      close(fdStat);
-      close(fd);
-      close(newfd);
-			exit(1);
-		}
-		
 		userTokens = strtok(buffer, " \n");
 		if(strcmp(userTokens, "REQ") == 0) {
+			
+			memset(user_file_message, '\0', sizeof(user_file_message));
+			strcpy(user_file_message, read_file(line_num, user_file_message));
+			nwritten = write(newfd, user_file_message, strlen(user_file_message));
+			if(nwritten == -1) {
+				fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+	      		close(fdStat);
+	      		close(fd);
+	      		close(newfd);
+				exit(1);
+			}
+			
 			userTokens = strtok(NULL, " \n");
 			if(userTokens != NULL) {
 				sprintf(reg, "UPD %s %d %s\n", inet_ntoa(*ip), SMBport, userTokens);
@@ -294,9 +296,9 @@ int main(int argc, char **argv) {
 				
 				if(nStat == -1) {
 					fprintf(stderr, "ERROR: Couldn't send message to STAT...\n");
-          close(fdStat);
-          close(fd);
-          close(newfd);
+          			close(fdStat);
+          			close(fd);
+          			close(newfd);
 					exit(1);
 				}
 				printf("Sent msg to stat\n");
@@ -306,38 +308,50 @@ int main(int argc, char **argv) {
 
 				if(nreadStat == -1) {
 					fprintf(stderr, "ERROR: Couldn't receive message from STAT...\n");
-          close(fdStat);
-          close(fd);
-          close(newfd);
+          			close(fdStat);
+          			close(fd);
+          			close(newfd);
 					exit(1);
 				}
 
 				printf("%s", buffer2);
-					
-			} else {
-				fprintf(stderr, "ERROR: message unknown...\n");
-				ptr = strcpy(buffer, "KO\n");
-				nwritten = write(newfd, ptr, strlen(ptr));
-				if(nwritten == -1) {
-					fprintf(stderr, "ERROR: Couldn't send message to user...\n");
-          close(fdStat);
-          close(fd);
-          close(newfd);
+				
+				char *received;
+				received = strtok(buffer2, " \n");
+				
+				if(strcmp(received, "OK") != 0) {
+					close(fdStat);
+	      			close(fd);
+	      			close(newfd);
 					exit(1);
 				}
+					
+			} else {
+				fprintf(stderr, "ERROR: message unknown1...\n");
+				memset(ptr, '\0', sizeof(ptr));
+				ptr = strcpy(buffer, "KO\n");
+				nwritten = write(newfd, ptr, strlen(ptr));
+				
+				if(nwritten == -1)
+					fprintf(stderr, "ERROR: Couldn't send message to user...\n");
+					
+				close(fdStat);
+      			close(fd);
+      			close(newfd);
+				exit(1);
 			}
 			
 		} else {
-			fprintf(stderr, "ERROR: message unknown...\n");
-			ptr = strcpy(buffer, "KO\n");
-			nwritten = write(newfd, ptr, strlen(ptr));
-			if(nwritten == -1) {
-			  fprintf(stderr, "ERROR: couldn't send message to user...\n");
-        close(fdStat);
-        close(fd);
-        close(newfd);
-				exit(1);
-			}
+			fprintf(stderr, "ERROR: message unknown2...\n");
+			memset(buffer, '\0', sizeof(buffer));
+			strcpy(buffer, "KO\n");
+			nwritten = write(newfd, buffer, strlen(buffer));
+			if(nwritten == -1)
+				fprintf(stderr, "ERROR: couldn't send message to user...\n");
+			close(fdStat);
+    		close(fd);
+    		close(newfd);
+			exit(1);
 		}
 		
 		close(newfd);
